@@ -5,7 +5,7 @@ HPR 08/05/22
 import cv2
 import tkinter as tk
 from PIL import Image, ImageTk
-import time
+# import time
 import datetime
 
 def get_available_cameras(max_id = 5):
