@@ -1,0 +1,13 @@
+# All pycache
+birdcam/__pycache__/*
+birdcam/__pycache__/
+*.pyc
+*/*.pyc
+*/*/*.pyc
+
+# IDE-specific stuff
+.idea/
+.idea/*
+
+birdcam.egg-info/
+birdcam.egg-info/*
