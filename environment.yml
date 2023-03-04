@@ -1,0 +1,9 @@
+name: allbirds
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - opencv
+  - pillow
+prefix: 
