@@ -1,7 +1,10 @@
 """
 BirdCam-2000: ALL BIRDS, ALL THE TIME
 HPR 08/05/22
+HPR 05/03/23 Updating environment setup and adding executable
 """
+
+
 import cv2
 import tkinter as tk
 from PIL import Image, ImageTk
@@ -13,7 +16,7 @@ def get_available_cameras(max_id = 5):
 
     for idx in range(max_id):
         print('Trying camera ',idx, 'of', max_id, '...')
-        cap = cv2.VideoCapture(idx)
+        cap = cv2.VideoCapture(idx, cv2.CAP_DSHOW)
         ''' Alternative ways to determine whether available;
             REQUIRES TESTING FOR SPEED AND FUNCTION '''
         # success,image = cap.read()
@@ -22,7 +25,6 @@ def get_available_cameras(max_id = 5):
             ids_available.append(idx)
         cap.release()
     return ids_available
-
 
 
 ''' Fetch all available cameras and create dialog with button for each;
@@ -56,7 +58,6 @@ class CameraSelector(tk.Toplevel):
         self.wm_deiconify()
         self.wait_window()
         return self.camera.get()
-
 
 
 class BirdCam(tk.Tk):
@@ -217,14 +218,12 @@ class BirdCam(tk.Tk):
         self.write_video_frame()
 
 
-
     def write_video_frame(self):
         if self._record:
             ''' Factor of 1000 b/c opencv measures delay in ms '''
             delay = round(1000/self.FRAME_RATE_DEFAULT)
             self.video_out.write(self.frame)
             self.viewer.after(delay, self.write_video_frame)
-
 
 
     def stop(self):
@@ -262,7 +261,7 @@ class BirdCam(tk.Tk):
 
     ''' Connect to camera by ID '''
     def connect(self):
-        self.feed = cv2.VideoCapture(self.feed_index)
+        self.feed = cv2.VideoCapture(self.feed_index, cv2.CAP_DSHOW)
         print('Got feed', self.feed_index)
         # self.timer = time.time()
         self.grab_feed()
@@ -281,7 +280,7 @@ class BirdCam(tk.Tk):
         ''' Try to automatically reconnect if problem arises '''
         if self.frame is None:
             self.feed.release()
-            self.feed = cv2.VideoCapture(self.feed_index)
+            self.feed = cv2.VideoCapture(self.feed_index, cv2.CAP_DSHOW)
             self.viewer.after(10, self.grab_feed)
 
             ''' Cut video recording short, if necessary '''
@@ -315,7 +314,6 @@ class BirdCam(tk.Tk):
             pass
         cv2.destroyAllWindows()
         self.destroy()
-
 
 
 if __name__ == "__main__":

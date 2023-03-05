@@ -1,6 +1,6 @@
 # All pycache
-birdcam/__pycache__/*
-birdcam/__pycache__/
+*/__pycache__/*
+*/__pycache__/
 *.pyc
 */*.pyc
 */*/*.pyc
@@ -9,5 +9,12 @@ birdcam/__pycache__/
 .idea/
 .idea/*
 
-birdcam.egg-info/
-birdcam.egg-info/*
+*egg-info/
+*egg-info/*
+
+# Pyinstaller stuff
+*spec
+dist/
+dist/*
+build/
+build/*
