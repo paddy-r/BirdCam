@@ -10,6 +10,38 @@ import tkinter as tk
 from PIL import Image, ImageTk
 # import time
 import datetime
+import sys,os
+
+
+# Grab path to file, depending on whether normal script or Pyinstaller executable
+# Taken from here: https://stackoverflow.com/questions/404744/determining-application-path-in-a-python-exe-generated-by-pyinstaller
+if getattr(sys, 'frozen', False):
+    # If the application is run as a bundle, the PyInstaller bootloader
+    # extends the sys module by a flag frozen=True and sets the app 
+    # path into variable _MEIPASS'.
+    APP_PATH = sys._MEIPASS
+else:
+    APP_PATH = os.path.dirname(os.path.abspath(__file__))
+print(APP_PATH)
+
+
+def get_filename():
+    filename = "grab_" + str(datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
+    return filename
+
+
+SAVE_FOLDER_DEFAULT = os.path.join(os.path.dirname(os.path.dirname(APP_PATH)), "media")
+print(SAVE_FOLDER_DEFAULT)
+
+IMAGE_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "images")
+IMAGE_EXT_DEFAULT = '.png'
+IMAGE_FILE_DEFAULT = get_filename()
+VIDEO_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "videos")
+VIDEO_EXT_DEFAULT = '.avi'
+VIDEO_FILE_DEFAULT = get_filename()
+
+FEED_INDEX_DEFAULT = 1
+FRAME_RATE_DEFAULT = 10
 
 def get_available_cameras(max_id = 5):
     ids_available = []
@@ -71,19 +103,21 @@ class BirdCam(tk.Tk):
         self.title("BirdCam-2000: ALL BIRDS, ALL THE TIME")
         # self.config(background="#FFFFFF")
 
-        self.IMAGE_FILE_DEFAULT = self.get_filename
-        self.IMAGE_EXT_DEFAULT = '.png'
-        self.VIDEO_FILE_DEFAULT = self.get_filename
-        self.VIDEO_EXT_DEFAULT = '.avi'
+        self.image_folder = IMAGE_FOLDER_DEFAULT
+        self.image_file = IMAGE_FILE_DEFAULT
+        self.image_ext = IMAGE_EXT_DEFAULT
+        self.video_folder = VIDEO_FOLDER_DEFAULT
+        self.video_file = VIDEO_FILE_DEFAULT
+        self.video_ext = VIDEO_EXT_DEFAULT
+
 
         ''' Set up feed index etc. '''
-        self.FEED_INDEX_DEFAULT = 1
-        self.FRAME_RATE_DEFAULT = 10
+        self.frame_rate = FRAME_RATE_DEFAULT
         self.feed_index = feed_index
         if feed_index and type(feed_index) == int:
             self.feed_index = feed_index
         else:
-            self.feed_index = self.FEED_INDEX_DEFAULT
+            self.feed_index = FEED_INDEX_DEFAULT
 
         self._record = False
 
@@ -199,10 +233,14 @@ class BirdCam(tk.Tk):
 
         print('Starting video recording...')
         if not video_file:
-            video_file = self.VIDEO_FILE_DEFAULT() + self.VIDEO_EXT_DEFAULT
+            video_folder = self.video_folder
+            if not os.path.exists(video_folder):
+                os.makedirs(video_folder)
+            file = os.path.join(video_folder, self.video_file + self.video_ext)
+            print(file)
 
         ''' Get video properties '''
-        frame_rate = self.FRAME_RATE_DEFAULT
+        frame_rate = self.frame_rate
         w,h = self.get_frame_dimensions()
         if not w or not h:
             print('Could not get frame dimensions; aborting video save')
@@ -212,7 +250,7 @@ class BirdCam(tk.Tk):
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         print('frame rate:', frame_rate)
         print('w,h:', w,h)
-        self.video_out = cv2.VideoWriter(video_file, fourcc, frame_rate, (w,h))
+        self.video_out = cv2.VideoWriter(file, fourcc, frame_rate, (w,h))
         ''' Allow recording '''
         self._record = True
         self.write_video_frame()
@@ -221,7 +259,7 @@ class BirdCam(tk.Tk):
     def write_video_frame(self):
         if self._record:
             ''' Factor of 1000 b/c opencv measures delay in ms '''
-            delay = round(1000/self.FRAME_RATE_DEFAULT)
+            delay = round(1000/self.frame_rate)
             self.video_out.write(self.frame)
             self.viewer.after(delay, self.write_video_frame)
 
@@ -237,16 +275,17 @@ class BirdCam(tk.Tk):
 
 
     def grab_frame(self, file = None):
-        if not file:
-            file = self.IMAGE_FILE_DEFAULT() + self.IMAGE_EXT_DEFAULT
         print('Grabbing video frame...')
+        if not file:
+            file = self.image_file + self.image_ext
         if hasattr(self, 'img'):
+            img_folder = self.image_folder
+            if not os.path.exists(img_folder):
+                os.makedirs(img_folder)
+            file = os.path.join(img_folder, file)
             self.img.save(file)
             print('Done')
 
-    def get_filename(self):
-        filename = "grab_" + str(datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
-        return filename
 
     ''' Get all available cameras and ask for user input '''
     def OnFindCamera(self):

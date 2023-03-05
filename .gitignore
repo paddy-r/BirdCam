@@ -18,3 +18,8 @@ dist/
 dist/*
 build/
 build/*
+
+# Local images/videos
+media/
+media/*
+media/*/*
