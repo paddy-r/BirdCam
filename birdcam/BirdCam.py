@@ -7,6 +7,7 @@ HPR 05/03/23 Updating environment setup and adding executable
 
 import cv2
 import tkinter as tk
+import tkinter.filedialog as fd
 from PIL import Image, ImageTk
 # import time
 import datetime
@@ -33,15 +34,21 @@ def get_filename():
 SAVE_FOLDER_DEFAULT = os.path.join(os.path.dirname(os.path.dirname(APP_PATH)), "media")
 print(SAVE_FOLDER_DEFAULT)
 
+FILE_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "files")
+FILE_EXT_DEFAULT = '.txt'
+FILE_FILE_DEFAULT = get_filename()
+
 IMAGE_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "images")
 IMAGE_EXT_DEFAULT = '.png'
 IMAGE_FILE_DEFAULT = get_filename()
+
 VIDEO_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "videos")
 VIDEO_EXT_DEFAULT = '.avi'
 VIDEO_FILE_DEFAULT = get_filename()
 
 FEED_INDEX_DEFAULT = 1
 FRAME_RATE_DEFAULT = 10
+
 
 def get_available_cameras(max_id = 5):
     ids_available = []
@@ -103,6 +110,10 @@ class BirdCam(tk.Tk):
         self.title("BirdCam-2000: ALL BIRDS, ALL THE TIME")
         # self.config(background="#FFFFFF")
 
+
+        self.file_folder = FILE_FOLDER_DEFAULT
+        self.file_file = FILE_FILE_DEFAULT
+        self.file_ext = FILE_EXT_DEFAULT
         self.image_folder = IMAGE_FOLDER_DEFAULT
         self.image_file = IMAGE_FILE_DEFAULT
         self.image_ext = IMAGE_EXT_DEFAULT
@@ -225,7 +236,6 @@ class BirdCam(tk.Tk):
             print(e)
 
 
-
     def record(self, video_file = None):
         if self._record:
             print('Already recording; stop current video first')
@@ -298,12 +308,14 @@ class BirdCam(tk.Tk):
         self.feed_index = camera_id
         self.connect()
 
+
     ''' Connect to camera by ID '''
     def connect(self):
         self.feed = cv2.VideoCapture(self.feed_index, cv2.CAP_DSHOW)
         print('Got feed', self.feed_index)
         # self.timer = time.time()
         self.grab_feed()
+
 
     def get_frame_dimensions(self):
         try:
@@ -313,6 +325,7 @@ class BirdCam(tk.Tk):
             w = None
             h = None
         return round(w),round(h)
+
 
     def grab_feed(self, frame_rate = None):
         _, self.frame = self.feed.read()
@@ -337,14 +350,27 @@ class BirdCam(tk.Tk):
         self.viewer.configure(image = imgtk)
         self.viewer.after(10, self.grab_feed)
 
+
     def OnSaveLocation(self):
         print('Running OnSaveLocation')
+        new_path = fd.askdirectory(parent=self, initialdir=APP_PATH, title='Please select a directory for saving general files')
+        print("New video save path selected:", new_path)
+        self.file_folder = new_path
+
 
     def OnImageSettings(self):
         print('Running OnImageSettings')
+        new_path = fd.askdirectory(parent=self, initialdir=APP_PATH, title='Please select a directory for saving images')
+        print("New image save path selected:", new_path)
+        self.image_folder = new_path
+
 
     def OnVideoSettings(self):
-        print('Running OnImageSettings')
+        print('Running OnVideoSettings')
+        new_path = fd.askdirectory(parent=self, initialdir=APP_PATH, title='Please select a directory for saving videos')
+        print("New video save path selected:", new_path)
+        self.video_folder = new_path
+
 
     def OnClose(self):
         try:
