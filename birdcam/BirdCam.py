@@ -12,6 +12,7 @@ from PIL import Image, ImageTk
 # import time
 import datetime
 import sys,os
+import numpy as np
 
 
 # Grab path to file, depending on whether normal script or Pyinstaller executable
@@ -36,15 +37,15 @@ print(SAVE_FOLDER_DEFAULT)
 
 FILE_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "files")
 FILE_EXT_DEFAULT = '.txt'
-FILE_FILE_DEFAULT = get_filename()
+FILE_FILE_DEFAULT = get_filename
 
 IMAGE_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "images")
 IMAGE_EXT_DEFAULT = '.png'
-IMAGE_FILE_DEFAULT = get_filename()
+IMAGE_FILE_DEFAULT = get_filename
 
 VIDEO_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "videos")
 VIDEO_EXT_DEFAULT = '.avi'
-VIDEO_FILE_DEFAULT = get_filename()
+VIDEO_FILE_DEFAULT = get_filename
 
 FEED_INDEX_DEFAULT = 1
 FRAME_RATE_DEFAULT = 10
@@ -102,7 +103,20 @@ class CameraSelector(tk.Toplevel):
 class BirdCam(tk.Tk):
 
     ''' Constructor '''
-    def __init__(self, feed_index = None, *args, **kwargs):
+    def __init__(self, *args,
+                       feed_index = FEED_INDEX_DEFAULT,
+                       frame_rate = FRAME_RATE_DEFAULT,
+                       file_folder = FILE_FOLDER_DEFAULT,
+                       file_file = FILE_FILE_DEFAULT,
+                       file_ext = FILE_EXT_DEFAULT,
+                       image_folder = IMAGE_FOLDER_DEFAULT,
+                       image_file = IMAGE_FILE_DEFAULT,
+                       image_ext = IMAGE_EXT_DEFAULT,
+                       video_folder = VIDEO_FOLDER_DEFAULT,
+                       video_file = VIDEO_FILE_DEFAULT,
+                       video_ext = VIDEO_EXT_DEFAULT,
+                       **kwargs):
+
         super().__init__(*args, **kwargs)
         self.args = args
         self.kwargs = kwargs
@@ -111,20 +125,20 @@ class BirdCam(tk.Tk):
         # self.config(background="#FFFFFF")
 
 
-        self.file_folder = FILE_FOLDER_DEFAULT
-        self.file_file = FILE_FILE_DEFAULT
-        self.file_ext = FILE_EXT_DEFAULT
-        self.image_folder = IMAGE_FOLDER_DEFAULT
-        self.image_file = IMAGE_FILE_DEFAULT
-        self.image_ext = IMAGE_EXT_DEFAULT
-        self.video_folder = VIDEO_FOLDER_DEFAULT
-        self.video_file = VIDEO_FILE_DEFAULT
-        self.video_ext = VIDEO_EXT_DEFAULT
+        self.file_folder = file_folder
+        self.file_file = file_file
+        self.file_ext = file_ext
+        self.image_folder = image_folder
+        self.image_file = image_file
+        self.image_ext = image_ext
+        self.video_folder = video_folder
+        self.video_file = video_file
+        self.video_ext = video_ext
 
 
         ''' Set up feed index etc. '''
-        self.frame_rate = FRAME_RATE_DEFAULT
-        self.feed_index = feed_index
+        self.frame_rate = frame_rate
+        # self.feed_index = feed_index
         if feed_index and type(feed_index) == int:
             self.feed_index = feed_index
         else:
@@ -246,7 +260,7 @@ class BirdCam(tk.Tk):
             video_folder = self.video_folder
             if not os.path.exists(video_folder):
                 os.makedirs(video_folder)
-            file = os.path.join(video_folder, self.video_file + self.video_ext)
+            file = os.path.join(video_folder, self.video_file() + self.video_ext)
             print(file)
 
         ''' Get video properties '''
@@ -287,14 +301,15 @@ class BirdCam(tk.Tk):
     def grab_frame(self, file = None):
         print('Grabbing video frame...')
         if not file:
-            file = self.image_file + self.image_ext
+            # print(self.image_file)
+            file = self.image_file() + self.image_ext
         if hasattr(self, 'img'):
             img_folder = self.image_folder
             if not os.path.exists(img_folder):
                 os.makedirs(img_folder)
             file = os.path.join(img_folder, file)
             self.img.save(file)
-            print('Done')
+            print('Done saving image file:', file)
 
 
     ''' Get all available cameras and ask for user input '''
