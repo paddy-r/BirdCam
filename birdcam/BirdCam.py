@@ -22,9 +22,10 @@ if getattr(sys, 'frozen', False):
     # extends the sys module by a flag frozen=True and sets the app 
     # path into variable _MEIPASS'.
     APP_PATH = sys._MEIPASS
+    print("\n## Running as executable, path to exe:", APP_PATH, "##\n")
 else:
     APP_PATH = os.path.dirname(os.path.abspath(__file__))
-print(APP_PATH)
+    print("\n## Running as script, path:", APP_PATH, "##\n")
 
 
 def get_filename():
@@ -303,13 +304,13 @@ class BirdCam(tk.Tk):
         if not file:
             # print(self.image_file)
             file = self.image_file() + self.image_ext
-        if hasattr(self, 'img'):
-            img_folder = self.image_folder
-            if not os.path.exists(img_folder):
-                os.makedirs(img_folder)
-            file = os.path.join(img_folder, file)
-            self.img.save(file)
-            print('Done saving image file:', file)
+        #if hasattr(self, 'img'):
+        img_folder = self.image_folder
+        if not os.path.exists(img_folder):
+            os.makedirs(img_folder)
+        file = os.path.join(img_folder, file)
+        self.img.save(file)
+        print('Done saving image file:', file)
 
 
     ''' Get all available cameras and ask for user input '''

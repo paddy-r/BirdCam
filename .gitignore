@@ -18,6 +18,7 @@ dist/
 dist/*
 build/
 build/*
+*spec
 
 # Local images/videos
 media/
