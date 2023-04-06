@@ -51,12 +51,15 @@ VIDEO_FILE_DEFAULT = get_filename
 FEED_INDEX_DEFAULT = 1
 FRAME_RATE_DEFAULT = 10
 
+INFO_BOX_MESSAGE_DEFAULT = ""
+INFO_DISPLAY_TIME_DEFAULT = 2000 # Display info box messages for 2 seconds
+
 
 def get_available_cameras(max_id = 5):
     ids_available = []
 
     for idx in range(max_id):
-        print('Trying camera ',idx, 'of', max_id, '...')
+        print('Trying camera ', idx, 'of', max_id, '...')
         cap = cv2.VideoCapture(idx, cv2.CAP_DSHOW)
         ''' Alternative ways to determine whether available;
             REQUIRES TESTING FOR SPEED AND FUNCTION '''
@@ -192,7 +195,7 @@ class BirdCam(tk.Tk):
 
         ''' Set up info box text '''
         self.info_text = tk.StringVar()
-        self.info_text.set("Info box")
+        #self.info_text.set("Info box")
 
         ''' View section '''
         self.viewer = tk.Label(self.viewer_section,
@@ -211,6 +214,7 @@ class BirdCam(tk.Tk):
         self.info_box.grid(sticky = 'nsew')
         self.info_section.grid_columnconfigure(0, weight = 1)
         self.info_section.grid_rowconfigure(0, weight = 1)
+        self.update_infobox(message = "Info box")
 
         ''' Button section'''
         self.button_record = tk.Button(self.button_section,
@@ -244,41 +248,52 @@ class BirdCam(tk.Tk):
 
         ''' Try to connect to video feed '''
         try:
-            print('Trying to connect to camera ', self.feed_index, '...')
+            self.update_infobox(['Trying to connect to camera', self.feed_index, '...'])
             self.connect()
         except Exception as e:
-            print('Could not connect to camera', self.feed_index, ', exception follows')
+            self.update_infobox(['Could not connect to camera', self.feed_index, ', exception follows'])
             print(e)
+
+
+    def update_infobox(self, message=INFO_BOX_MESSAGE_DEFAULT, t=INFO_DISPLAY_TIME_DEFAULT):
+        if isinstance(message, list):
+            message = ' '.join(str(a) for a in message)
+        else:
+            message = str(message)
+        print(message)
+        self.info_text.set(message)
+        if message != INFO_BOX_MESSAGE_DEFAULT:
+            self.after(t, self.update_infobox)
 
 
     def record(self, video_file = None):
         if self._record:
-            print('Already recording; stop current video first')
+            self.update_infobox('Already recording; stop current video first')
             return
 
-        print('Starting video recording...')
+        self.update_infobox('Starting video recording...')
         if not video_file:
             video_folder = self.video_folder
             if not os.path.exists(video_folder):
                 os.makedirs(video_folder)
             file = os.path.join(video_folder, self.video_file() + self.video_ext)
-            print(file)
+            self.update_infobox(file)
 
         ''' Get video properties '''
         frame_rate = self.frame_rate
         w,h = self.get_frame_dimensions()
         if not w or not h:
-            print('Could not get frame dimensions; aborting video save')
+            self.update_infobox('Could not get frame dimensions; aborting video save')
             return
 
         ''' Set up video writer object '''
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        print('frame rate:', frame_rate)
-        print('w,h:', w,h)
+        self.update_infobox(['Starting video with frame rate and w,h:', frame_rate, w, h])
         self.video_out = cv2.VideoWriter(file, fourcc, frame_rate, (w,h))
         ''' Allow recording '''
         self._record = True
         self.write_video_frame()
+        self._video_file = file
 
 
     def write_video_frame(self):
@@ -290,17 +305,19 @@ class BirdCam(tk.Tk):
 
 
     def stop(self):
-        print('Stopping video recording...')
-        ''' Disallow recording '''
-        self._record = False
-        ''' Dump video to file '''
-        print('Saving video...')
-        self.video_out.release()
-
+        if self._record:
+            self.update_infobox('Stopping video recording...')
+            ''' Disallow recording '''
+            self._record = False
+            ''' Dump video to file '''
+            self.update_infobox(['Saving video to', self._video_file, "..."])
+            self.video_out.release()
+        else:
+            self.update_infobox("Can't stop recording as not recording")
 
 
     def grab_frame(self, file = None):
-        print('Grabbing video frame...')
+        self.update_infobox('Grabbing video frame...')
         if not file:
             # print(self.image_file)
             file = self.image_file() + self.image_ext
@@ -310,17 +327,17 @@ class BirdCam(tk.Tk):
             os.makedirs(img_folder)
         file = os.path.join(img_folder, file)
         self.img.save(file)
-        print('Done saving image file:', file)
+        self.update_infobox(['Done saving image file:', file])
 
 
     ''' Get all available cameras and ask for user input '''
     def OnFindCamera(self):
-        print('Running OnFindCamera')
+        self.update_infobox('Running OnFindCamera')
         ''' Get IDs of all available cameras and add to drop-down menu '''
         ids = get_available_cameras()
         print('Found camera IDs:', ids)
         camera_id = CameraSelector(self, ids, text = "Select camera to connect").show()
-        print('Camera', camera_id, 'selected; trying to connect...')
+        self.update_infobox(['Camera', camera_id, 'selected; trying to connect...'])
         self.feed_index = camera_id
         self.connect()
 
@@ -328,7 +345,7 @@ class BirdCam(tk.Tk):
     ''' Connect to camera by ID '''
     def connect(self):
         self.feed = cv2.VideoCapture(self.feed_index, cv2.CAP_DSHOW)
-        print('Got feed', self.feed_index)
+        self.update_infobox(['Got feed', self.feed_index])
         # self.timer = time.time()
         self.grab_feed()
 
@@ -353,7 +370,7 @@ class BirdCam(tk.Tk):
 
             ''' Cut video recording short, if necessary '''
             if self._record:
-                print('Connection to camera lost; stopping video recording and saving video')
+                self.update_infobox('Connection to camera lost; stopping video recording and saving video')
                 self._record = False
                 self.video_out.release()
             return
@@ -368,24 +385,33 @@ class BirdCam(tk.Tk):
 
 
     def OnSaveLocation(self):
-        print('Running OnSaveLocation')
+        self.update_infobox('Running OnSaveLocation')
         new_path = fd.askdirectory(parent=self, initialdir=APP_PATH, title='Please select a directory for saving general files')
-        print("New video save path selected:", new_path)
-        self.file_folder = new_path
+        if new_path:
+            self.update_infobox(["New file save path selected:", new_path])
+            self.file_folder = new_path
+        else:
+            self.update_infobox("New file save path not selected")
 
 
     def OnImageSettings(self):
-        print('Running OnImageSettings')
+        self.update_infobox('Running OnImageSettings')
         new_path = fd.askdirectory(parent=self, initialdir=APP_PATH, title='Please select a directory for saving images')
-        print("New image save path selected:", new_path)
-        self.image_folder = new_path
+        if new_path:
+            self.update_infobox(["New image save path selected:", new_path])
+            self.image_folder = new_path
+        else:
+            self.update_infobox("New file save path not selected")
 
 
     def OnVideoSettings(self):
-        print('Running OnVideoSettings')
+        self.update_infobox('Running OnVideoSettings')
         new_path = fd.askdirectory(parent=self, initialdir=APP_PATH, title='Please select a directory for saving videos')
-        print("New video save path selected:", new_path)
-        self.video_folder = new_path
+        if new_path:
+            self.update_infobox(["New video save path selected:", new_path])
+            self.video_folder = new_path
+        else:
+            self.update_infobox("New video path not selected")
 
 
     def OnClose(self):
