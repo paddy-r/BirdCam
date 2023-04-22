@@ -48,11 +48,14 @@ VIDEO_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "videos")
 VIDEO_EXT_DEFAULT = '.avi'
 VIDEO_FILE_DEFAULT = get_filename
 
-FEED_INDEX_DEFAULT = 1
+FEED_INDEX_DEFAULT = 0
 FRAME_RATE_DEFAULT = 10
 
 INFO_BOX_MESSAGE_DEFAULT = ""
 INFO_DISPLAY_TIME_DEFAULT = 2000 # Display info box messages for 2 seconds
+
+VIDEO_STOP_DEFAULT = "Stop recording"
+VIDEO_START_DEFAULT = "Start recording"
 
 
 def get_available_cameras(max_id = 5):
@@ -72,7 +75,7 @@ def get_available_cameras(max_id = 5):
 
 
 ''' Fetch all available cameras and create dialog with button for each;
-    returns index corresponding  '''
+    returns index corresponding to selected camera '''
 class CameraSelector(tk.Toplevel):
     def __init__(self, parent, camera_list, text = None):
         # tk.Toplevel.__init__(self, parent)
@@ -84,7 +87,10 @@ class CameraSelector(tk.Toplevel):
         # self.label = tk.Label(self)
 
         ''' Default radio button to select is lowest of camera IDs '''
-        self.camera = tk.IntVar(min(camera_list))
+        #self.camera = min(camera_list)
+        self.camera = tk.IntVar()
+        self.camera.set(min(camera_list))
+        #print("Camera ID:", self.camera)
 
         for i in camera_list:
             rb = tk.Radiobutton(self, text = "Camera" + str(i), variable = self.camera, value = i)
@@ -96,12 +102,13 @@ class CameraSelector(tk.Toplevel):
         self.ok_button.pack(side = "top")
 
     def OnOK(self, event = None):
+        print("Camera ID:", int(self.camera.get()))
         self.destroy()
 
     def show(self):
         self.wm_deiconify()
         self.wait_window()
-        return self.camera.get()
+        return self.camera
 
 
 class BirdCam(tk.Tk):
@@ -119,6 +126,8 @@ class BirdCam(tk.Tk):
                        video_folder = VIDEO_FOLDER_DEFAULT,
                        video_file = VIDEO_FILE_DEFAULT,
                        video_ext = VIDEO_EXT_DEFAULT,
+                       video_start_text = VIDEO_START_DEFAULT,
+                       video_stop_text = VIDEO_STOP_DEFAULT,
                        **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -149,6 +158,7 @@ class BirdCam(tk.Tk):
             self.feed_index = FEED_INDEX_DEFAULT
 
         self._record = False
+        self._connected = False
 
         self.frame_edge_col = 'black'
         self.frame_edge_thickness = 1
@@ -254,6 +264,23 @@ class BirdCam(tk.Tk):
             self.update_infobox(['Could not connect to camera', self.feed_index, ', exception follows'])
             print(e)
 
+        #self.bind("<FocusOut>", self.on_focus_out)
+        #self.bind("<FocusIn>", self.on_focus_in)
+        #self.bind('<Motion>', self.motion)
+
+
+    def motion(self, event = None):
+        x, y = event.x, event.y
+        print('{}, {}'.format(x, y))
+
+
+    def on_focus_out(self, event = None):
+        print("## FOCUS OUT ##")
+
+
+    def on_focus_in(self, event = None):
+        print("## FOCUS IN ##")
+
 
     def update_infobox(self, message=INFO_BOX_MESSAGE_DEFAULT, t=INFO_DISPLAY_TIME_DEFAULT):
         if isinstance(message, list):
@@ -332,21 +359,27 @@ class BirdCam(tk.Tk):
 
     ''' Get all available cameras and ask for user input '''
     def OnFindCamera(self):
-        self.update_infobox('Running OnFindCamera')
+        #self.update_infobox('Running OnFindCamera')
         ''' Get IDs of all available cameras and add to drop-down menu '''
         ids = get_available_cameras()
         print('Found camera IDs:', ids)
         camera_id = CameraSelector(self, ids, text = "Select camera to connect").show()
         self.update_infobox(['Camera', camera_id, 'selected; trying to connect...'])
-        self.feed_index = camera_id
+        self.feed_index = int(camera_id.get())
         self.connect()
 
 
     ''' Connect to camera by ID '''
     def connect(self):
+        if self._connected:
+            self.update_infobox("Releasing old feed...")
+            self.feed.release()
+        else:
+            self._connected = True
         self.feed = cv2.VideoCapture(self.feed_index, cv2.CAP_DSHOW)
         self.update_infobox(['Got feed', self.feed_index])
         # self.timer = time.time()
+        self.update_infobox("Running grab_feed from connect...")
         self.grab_feed()
 
 
@@ -366,7 +399,7 @@ class BirdCam(tk.Tk):
         if self.frame is None:
             self.feed.release()
             self.feed = cv2.VideoCapture(self.feed_index, cv2.CAP_DSHOW)
-            self.viewer.after(10, self.grab_feed)
+            self.viewer.after(2, self.grab_feed)
 
             ''' Cut video recording short, if necessary '''
             if self._record:
