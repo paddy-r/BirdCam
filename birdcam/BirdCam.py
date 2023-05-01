@@ -115,8 +115,7 @@ class CameraSelector(tk.Toplevel):
 class BirdCam(tk.Tk):
 
     ''' Constructor '''
-    def __init__(self, *args,
-                       feed_index = FEED_INDEX_DEFAULT,
+    def __init__(self, feed_index = FEED_INDEX_DEFAULT,
                        frame_rate = FRAME_RATE_DEFAULT,
                        file_folder = FILE_FOLDER_DEFAULT,
                        file_file = FILE_FILE_DEFAULT,
@@ -124,11 +123,13 @@ class BirdCam(tk.Tk):
                        image_folder = IMAGE_FOLDER_DEFAULT,
                        image_file = IMAGE_FILE_DEFAULT,
                        image_ext = IMAGE_EXT_DEFAULT,
+                       image_grab_text = GRAB_IMAGE_DEFAULT,
                        video_folder = VIDEO_FOLDER_DEFAULT,
                        video_file = VIDEO_FILE_DEFAULT,
                        video_ext = VIDEO_EXT_DEFAULT,
                        video_start_text = VIDEO_START_DEFAULT,
                        video_stop_text = VIDEO_STOP_DEFAULT,
+                       *args,
                        **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -145,9 +146,12 @@ class BirdCam(tk.Tk):
         self.image_folder = image_folder
         self.image_file = image_file
         self.image_ext = image_ext
+        self.image_grab_text = image_grab_text
         self.video_folder = video_folder
         self.video_file = video_file
         self.video_ext = video_ext
+        self.video_start_text = video_start_text
+        self.video_stop_text = video_stop_text
 
 
         ''' Set up feed index etc. '''
@@ -229,18 +233,18 @@ class BirdCam(tk.Tk):
 
         ''' Button section'''
         self.button_record = tk.Button(self.button_section,
-                                          text = VIDEO_START_DEFAULT,
+                                          text = self.video_start_text,
                                           command = self.recording_actions)
         #self.button_stop = tk.Button(self.button_section,
-        #                                  text = VIDEO_STOP_DEFAULT,
+        #                                  text = self.video_stop_text,
         #                                  command = self.stop)
         self.button_grab_frame = tk.Button(self.button_section,
-                                              text = GRAB_IMAGE_DEFAULT,
+                                              text = self.image_grab_text,
                                               command = self.grab_frame)
 
         self.button_record.grid(row = 0, column = 0, sticky = 'nsew')
         #self.button_stop.grid(row = 0, column = 1, sticky = 'nsew')
-        self.button_grab_frame.grid(row = 0, column = 2, sticky = 'nsew')
+        self.button_grab_frame.grid(row = 0, column = 1, sticky = 'nsew')
 
         self.button_section.grid_rowconfigure(0, weight = 1)
         self.button_section.grid_columnconfigure(0, weight = 1)
@@ -298,11 +302,11 @@ class BirdCam(tk.Tk):
         if self._record:
             # Stop recording and change text/icon of button
             self.stop()
-            self.button_record.configure(text=VIDEO_START_DEFAULT)
+            self.button_record.configure(text=self.video_start_text)
         else:
             # Start recording and change text/icon of button
             self.record()
-            self.button_record.configure(text=VIDEO_STOP_DEFAULT)
+            self.button_record.configure(text=self.video_stop_text)
 
 
     def record(self, video_file=None):
