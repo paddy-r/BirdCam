@@ -12,7 +12,7 @@ from PIL import Image, ImageTk
 # import time
 import datetime
 import sys,os
-import numpy as np
+#import numpy as np
 
 
 # Grab path to file, depending on whether normal script or Pyinstaller executable
@@ -57,6 +57,8 @@ INFO_DISPLAY_TIME_DEFAULT = 2000 # Display info box messages for 2 seconds
 VIDEO_STOP_DEFAULT = "Stop recording"
 VIDEO_START_DEFAULT = "Start recording"
 
+GRAB_IMAGE_DEFAULT = "Grab image"
+
 
 def get_available_cameras(max_id = 5):
     ids_available = []
@@ -77,7 +79,7 @@ def get_available_cameras(max_id = 5):
 ''' Fetch all available cameras and create dialog with button for each;
     returns index corresponding to selected camera '''
 class CameraSelector(tk.Toplevel):
-    def __init__(self, parent, camera_list, text = None):
+    def __init__(self, parent, camera_list, text=None):
         # tk.Toplevel.__init__(self, parent)
         super().__init__(parent)
 
@@ -89,26 +91,25 @@ class CameraSelector(tk.Toplevel):
         ''' Default radio button to select is lowest of camera IDs '''
         #self.camera = min(camera_list)
         self.camera = tk.IntVar()
-        self.camera.set(min(camera_list))
-        #print("Camera ID:", self.camera)
+        #self.camera.set(min(camera_list))
 
         for i in camera_list:
-            rb = tk.Radiobutton(self, text = "Camera" + str(i), variable = self.camera, value = i)
+            rb = tk.Radiobutton(self, text="Camera" + str(i), variable=self.camera, value=i)
             rb.pack(side = "top")
-            rb.bind("<Return>", self.OnOK)
+            #rb.bind("<Return>", self.OnOK)
 
         # self.label.pack(side = "top", fill = "x")
         self.ok_button = tk.Button(self, text = "OK", command = self.OnOK)
         self.ok_button.pack(side = "top")
 
     def OnOK(self, event = None):
-        print("Camera ID:", int(self.camera.get()))
+        #print("Camera ID:", int(self.camera.get()))
         self.destroy()
 
     def show(self):
-        self.wm_deiconify()
+        #self.wm_deiconify()
         self.wait_window()
-        return self.camera
+        return self.camera.get()
 
 
 class BirdCam(tk.Tk):
@@ -228,23 +229,23 @@ class BirdCam(tk.Tk):
 
         ''' Button section'''
         self.button_record = tk.Button(self.button_section,
-                                          text = 'Record',
-                                          command = self.record)
-        self.button_stop = tk.Button(self.button_section,
-                                          text = 'Stop',
-                                          command = self.stop)
+                                          text = VIDEO_START_DEFAULT,
+                                          command = self.recording_actions)
+        #self.button_stop = tk.Button(self.button_section,
+        #                                  text = VIDEO_STOP_DEFAULT,
+        #                                  command = self.stop)
         self.button_grab_frame = tk.Button(self.button_section,
-                                              text = 'Grab frame',
+                                              text = GRAB_IMAGE_DEFAULT,
                                               command = self.grab_frame)
 
         self.button_record.grid(row = 0, column = 0, sticky = 'nsew')
-        self.button_stop.grid(row = 0, column = 1, sticky = 'nsew')
+        #self.button_stop.grid(row = 0, column = 1, sticky = 'nsew')
         self.button_grab_frame.grid(row = 0, column = 2, sticky = 'nsew')
 
         self.button_section.grid_rowconfigure(0, weight = 1)
         self.button_section.grid_columnconfigure(0, weight = 1)
         self.button_section.grid_columnconfigure(1, weight = 1)
-        self.button_section.grid_columnconfigure(2, weight = 1)
+        #self.button_section.grid_columnconfigure(2, weight = 1)
 
         ''' Finally configure main grid '''
         self.viewer_section.grid(row = 0, column = 0, sticky = 'nesw')
@@ -274,11 +275,11 @@ class BirdCam(tk.Tk):
         print('{}, {}'.format(x, y))
 
 
-    def on_focus_out(self, event = None):
+    def on_focus_out(self, event=None):
         print("## FOCUS OUT ##")
 
 
-    def on_focus_in(self, event = None):
+    def on_focus_in(self, event=None):
         print("## FOCUS IN ##")
 
 
@@ -293,10 +294,21 @@ class BirdCam(tk.Tk):
             self.after(t, self.update_infobox)
 
 
-    def record(self, video_file = None):
+    def recording_actions(self, event=None):
         if self._record:
-            self.update_infobox('Already recording; stop current video first')
-            return
+            # Stop recording and change text/icon of button
+            self.stop()
+            self.button_record.configure(text=VIDEO_START_DEFAULT)
+        else:
+            # Start recording and change text/icon of button
+            self.record()
+            self.button_record.configure(text=VIDEO_STOP_DEFAULT)
+
+
+    def record(self, video_file=None):
+        #if self._record:
+        #    self.update_infobox('Already recording; stop current video first')
+        #    return
 
         self.update_infobox('Starting video recording...')
         if not video_file:
@@ -362,10 +374,11 @@ class BirdCam(tk.Tk):
         #self.update_infobox('Running OnFindCamera')
         ''' Get IDs of all available cameras and add to drop-down menu '''
         ids = get_available_cameras()
-        print('Found camera IDs:', ids)
+        self.update_infobox(['Found camera IDs:', ids])
         camera_id = CameraSelector(self, ids, text = "Select camera to connect").show()
+        #camera_id = CameraSelector(self, ids, text = "Select camera to connect")
         self.update_infobox(['Camera', camera_id, 'selected; trying to connect...'])
-        self.feed_index = int(camera_id.get())
+        self.feed_index = camera_id
         self.connect()
 
 
