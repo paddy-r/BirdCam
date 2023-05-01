@@ -43,10 +43,12 @@ FILE_FILE_DEFAULT = get_filename
 IMAGE_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "images")
 IMAGE_EXT_DEFAULT = '.png'
 IMAGE_FILE_DEFAULT = get_filename
+GRAB_IMAGE_DEFAULT = "Grab image"
 
 VIDEO_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "videos")
 VIDEO_EXT_DEFAULT = '.avi'
 VIDEO_FILE_DEFAULT = get_filename
+VIDEO_DURATION_LIMIT_DEFAULT = 10000 # Stop recording video after this time to avoid huge files
 
 FEED_INDEX_DEFAULT = 0
 FRAME_RATE_DEFAULT = 10
@@ -56,8 +58,6 @@ INFO_DISPLAY_TIME_DEFAULT = 2000 # Display info box messages for 2 seconds
 
 VIDEO_STOP_DEFAULT = "Stop recording"
 VIDEO_START_DEFAULT = "Start recording"
-
-GRAB_IMAGE_DEFAULT = "Grab image"
 
 
 def get_available_cameras(max_id = 5):
@@ -129,6 +129,7 @@ class BirdCam(tk.Tk):
                        video_ext = VIDEO_EXT_DEFAULT,
                        video_start_text = VIDEO_START_DEFAULT,
                        video_stop_text = VIDEO_STOP_DEFAULT,
+                       video_duration_limit = VIDEO_DURATION_LIMIT_DEFAULT,
                        *args,
                        **kwargs):
 
@@ -152,6 +153,7 @@ class BirdCam(tk.Tk):
         self.video_ext = video_ext
         self.video_start_text = video_start_text
         self.video_stop_text = video_stop_text
+        self.video_duration_limit = video_duration_limit
 
 
         ''' Set up feed index etc. '''
@@ -302,11 +304,12 @@ class BirdCam(tk.Tk):
         if self._record:
             # Stop recording and change text/icon of button
             self.stop()
-            self.button_record.configure(text=self.video_start_text)
+            #self.button_record.configure(text=self.video_start_text)
         else:
             # Start recording and change text/icon of button
             self.record()
-            self.button_record.configure(text=self.video_stop_text)
+            #self.button_record.configure(text=self.video_stop_text)
+            self.viewer.after(self.video_duration_limit, self.stop)
 
 
     def record(self, video_file=None):
@@ -328,6 +331,9 @@ class BirdCam(tk.Tk):
         if not w or not h:
             self.update_infobox('Could not get frame dimensions; aborting video save')
             return
+
+        ''' Update video button text '''
+        self.button_record.configure(text=self.video_stop_text)
 
         ''' Set up video writer object '''
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
@@ -355,8 +361,11 @@ class BirdCam(tk.Tk):
             ''' Dump video to file '''
             self.update_infobox(['Saving video to', self._video_file, "..."])
             self.video_out.release()
+            ''' Update video button text '''
+            self.button_record.configure(text=self.video_start_text)
         else:
-            self.update_infobox("Can't stop recording as not recording")
+            #self.update_infobox("Can't stop recording as not recording")
+            pass
 
 
     def grab_frame(self, file = None):
