@@ -4,6 +4,7 @@
 
 # Peaks and troughs code adapted from here: https://stackoverflow.com/questions/56620649/how-to-find-troughs-in-a-1-d-array
 
+
 import cv2
 import numpy as np
 import sys,os
@@ -13,6 +14,50 @@ from scipy.spatial.distance import euclidean
 
 
 THRESHOLD_DEFAULT = 40
+ENDINGS_DEFAULT = ["png"]
+# STARTINGS_DEFAULT = ["grab"]
+
+
+# HR 27/05/23 Adding functionality to create video from series of images
+def create_video(image_folder,
+                 endings=ENDINGS_DEFAULT,
+                 # startings=STARTINGS_DEFAULT,
+                 output_folder=None):
+
+    if not output_folder:
+        output_folder = image_folder
+
+    video_name = "video_out.avi"
+    video_fullpath = os.path.join(output_folder, video_name)
+    frame_rate = 1
+
+    images = [file for file in os.listdir(image_folder) if file.endswith(tuple(endings))]
+    # images = [file for file in os.listdir(image_folder) if file.startswith(tuple(startings))]
+    images.sort()
+    print("Found images in {}:".format(image_folder))
+    for image in images:
+        print(image)
+
+    frame = cv2.imread(os.path.join(image_folder, images[0])) # Get image dimensions, and assume all the same
+    height, width, layers = frame.shape
+    print("Image shape:", frame.shape)
+
+    # Basic, trying to avi (from here: https://stackoverflow.com/questions/44947505/how-to-make-a-movie-out-of-images-in-python)
+    # video = cv2.VideoWriter(video_fullpath, 0, 1, (width, height))
+    # print("Video created")
+
+    # Less basic as above doesn't work: https://stackoverflow.com/questions/63925179/making-a-video-with-images-in-python-using-opencv-on-mac)
+    fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
+    video = cv2.VideoWriter(video_fullpath, fourcc, frame_rate, (width, height), isColor=True)
+
+    n_images = len(images)
+    for i in range(n_images):
+        print("Trying to add image {} of {} to video".format(i, n_images))
+        video.write(cv2.imread(os.path.join(image_folder, images[i])))
+        print("Done")
+
+    video.release()
+    return video_fullpath
 
 
 def compare_images(impath, refpath, threshold = THRESHOLD_DEFAULT):
@@ -41,87 +86,3 @@ def compare_images(impath, refpath, threshold = THRESHOLD_DEFAULT):
     plt.show()
 
     return dist_h, dist_v
-
-
-# Reference image for detecting bands of colour
-reference_folder = r"C:\Users\hughr\BirdCam for git\media\images"
-reference_image = "grab_2023_03_11_11_06_29.png"
-reference_full = os.path.join(reference_folder, reference_image)
-
-
-# Example image with bands
-image_folder = r"C:\Users\hughr\AppData\Local\media\images"
-image_file = "grab_2023_03_05_12_49_22.png"
-image_full = os.path.join(image_folder, image_file)
-
-
-if __name__ == "__main__":
-
-    # Convert to np matrix then 1D array
-    image = cv2.imread(image_full)
-    arr = np.array(image)
-
-
-    # Define sample range to exclude central area
-    xblocks = [[0,100],[475,625]]
-    yblocks = [[0,150],[450,475]]
-    xrange = []
-    _ = [xrange.extend(range(el[0],el[1])) for el in xblocks]
-    #print(xrange)
-    yrange = []
-    _ = [yrange.extend(range(el[0],el[1])) for el in yblocks]
-    #print(yrange)
-
-
-    # Get H and V averages -> compressed into vectors
-    #vh = arr[xrange],yrange].mean(axis=0)
-    #vv = arr[xrange],yrange].mean(axis=1)
-    vh = arr.mean(axis=0)
-    vv = arr.mean(axis=1)
-    vech = vecv = np.sqrt(np.sum(np.square(vh),axis=1))
-    vecv = vecv = np.sqrt(np.sum(np.square(vv),axis=1))
-
-
-    # Get peaks, troughs
-    peak_args = {'width': 20,
-                 'distance': 10,
-    #             'height': 10,
-                 'prominence': 1,
-    #             'threshold': 5,
-    #             'rel_height': 0.8,
-                 }
-
-    #ph = [el for el in find_peaks(vech, **peak_args)[0] if el in xrange]
-    #th = [el for el in find_peaks(-vech, **peak_args)[0] if el in xrange]
-    #pv = [el for el in find_peaks(vecv, **peak_args)[0] if el in yrange]
-    #tv = [el for el in find_peaks(-vecv, **peak_args)[0] if el in yrange]
-    ph = find_peaks(vech, **peak_args)[0]
-    th = find_peaks(-vech, **peak_args)[0]
-    pv = find_peaks(vecv, **peak_args)[0]
-    tv = find_peaks(-vecv, **peak_args)[0]
-
-
-    # Plot original image and overlay vectors and peaks/troughs to check it's working
-    plt.imshow(image)
-
-    plt.plot(vecv,range(len(vecv)),'k')
-    plt.plot(vech,'k')
-
-    plt.scatter(ph, vech[ph], marker="o", color="black")
-    plt.scatter(th, vech[th], marker="o", color="black")
-    plt.scatter(vecv[pv], pv, marker="o", color="black")
-    plt.scatter(vecv[tv], tv, marker="o", color="black")
-
-    print("h peaks:", len(ph))
-    print("h troughs:", len(th))
-    print("v peaks:", len(pv))
-    print("v troughs:", len(tv))
-
-    plt.show()
-
-
-    # Look for areas of strong colour (greens and blacks seem common)
-
-    
-    # Reject if more than threshold amount of image -> reject or accept based on this
-
