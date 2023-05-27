@@ -48,7 +48,7 @@ GRAB_IMAGE_DEFAULT = "Grab image"
 VIDEO_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "videos")
 VIDEO_EXT_DEFAULT = '.avi'
 VIDEO_FILE_DEFAULT = get_filename
-VIDEO_DURATION_LIMIT_DEFAULT = 10000 # Stop recording video after this time to avoid huge files
+VIDEO_DURATION_LIMIT_DEFAULT = 25000 # Stop recording video after this time to avoid huge files
 
 FEED_INDEX_DEFAULT = 0
 FRAME_RATE_DEFAULT = 10
@@ -483,5 +483,5 @@ class BirdCam(tk.Tk):
 
 
 if __name__ == "__main__":
-    app = BirdCam(feed_index = 1)
+    app = BirdCam(feed_index = 0)
     app.mainloop()
