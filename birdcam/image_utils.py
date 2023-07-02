@@ -11,25 +11,28 @@ import sys,os
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.spatial.distance import euclidean
+from BirdCam import get_filename as gf
 
 
 THRESHOLD_DEFAULT = 40
 ENDINGS_DEFAULT = ["png"]
 # STARTINGS_DEFAULT = ["grab"]
+FRAME_RATE_DEFAULT = 1
+VIDEO_NAME_DEFAULT = "video_out.avi"
 
 
 # HR 27/05/23 Adding functionality to create video from series of images
 def create_video(image_folder,
                  endings=ENDINGS_DEFAULT,
                  # startings=STARTINGS_DEFAULT,
-                 output_folder=None):
+                 output_folder=None,
+                 video_name=VIDEO_NAME_DEFAULT,
+                 frame_rate=FRAME_RATE_DEFAULT):
 
     if not output_folder:
         output_folder = image_folder
 
-    video_name = "video_out.avi"
     video_fullpath = os.path.join(output_folder, video_name)
-    frame_rate = 1
 
     images = [file for file in os.listdir(image_folder) if file.endswith(tuple(endings))]
     # images = [file for file in os.listdir(image_folder) if file.startswith(tuple(startings))]
@@ -57,6 +60,7 @@ def create_video(image_folder,
         print("Done")
 
     video.release()
+    print("Saving video to:", video_fullpath)
     return video_fullpath
 
 
@@ -86,3 +90,9 @@ def compare_images(impath, refpath, threshold = THRESHOLD_DEFAULT):
     plt.show()
 
     return dist_h, dist_v
+
+
+if __name__ == "__main__":
+    im_folder = r"D:\_Back up to IOMEGA\_All BirdCam media\2023\images"
+    video_name = gf(stub="video_") + ".avi"
+    create_video(im_folder, frame_rate=5, video_name=video_name)
