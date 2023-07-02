@@ -28,8 +28,8 @@ else:
     print("\n## Running as script, path:", APP_PATH, "##\n")
 
 
-def get_filename():
-    filename = "grab_" + str(datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
+def get_filename(stub="grab_"):
+    filename = stub + str(datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
     return filename
 
 
