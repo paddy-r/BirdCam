@@ -377,9 +377,29 @@ class BirdCam(tk.Tk):
         self.update_infobox(['Done saving image file:', file])
 
     def OnCreateVideo(self, event=None):
-        print("Creating video from images...")
+        self.update_infobox("Running OnCreateVideo")
+        image_paths = fd.askopenfilenames(parent=self, initialdir=APP_PATH,
+                                          title='Please select one or more image files to combine into a video'
+                                          )
+        if image_paths:
+            image_paths_valid = [im for im in image_paths if os.path.splitext(im)[-1] in [self.image_ext]]
+            self.update_infobox(["{} valid images selected (i.e. with extensions in {}".format(len(image_paths_valid), [self.image_ext])])
+        else:
+            self.update_infobox("No files selected; aborting...")
+            return
 
-        ''' Get all available cameras and ask for user input '''
+        output_folder = fd.askdirectory(parent=self, initialdir=self.video_folder,
+                                        title='Please select video output folder'
+                                        )
+        video_name = os.path.join(self.video_file() + "_COMPILED" + self.video_ext)
+        video_fullpath = image_utils.create_video(video_name=video_name,
+                                                  image_fullpaths=image_paths_valid,
+                                                  output_folder=output_folder
+                                                  )
+
+        self.update_infobox(["Saved video to:", video_fullpath])
+
+    ''' Get all available cameras and ask for user input '''
     def OnFindCamera(self, event=None):
         # self.update_infobox('Running OnFindCamera')
         ''' Get IDs of all available cameras and add to drop-down menu '''

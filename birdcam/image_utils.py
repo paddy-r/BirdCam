@@ -15,33 +15,43 @@ from BirdCam import get_filename as gf
 
 
 THRESHOLD_DEFAULT = 40
-ENDINGS_DEFAULT = ["png"]
+ENDINGS_DEFAULT = [".png"]
 # STARTINGS_DEFAULT = ["grab"]
 FRAME_RATE_DEFAULT = 1
 VIDEO_NAME_DEFAULT = "video_out.avi"
 
 
 # HR 27/05/23 Adding functionality to create video from series of images
-def create_video(image_folder,
+def create_video(image_fullpaths=None,
+                 image_folder=None,
                  endings=ENDINGS_DEFAULT,
                  # startings=STARTINGS_DEFAULT,
                  output_folder=None,
                  video_name=VIDEO_NAME_DEFAULT,
                  frame_rate=FRAME_RATE_DEFAULT):
 
+    if (not image_fullpaths) and (not image_folder):
+        print("No images or image folder specified; aborting")
+        return
+
+    # Get all full paths to files if only folder passed
+    if not image_fullpaths:
+        all_files = os.listdir(image_folder)
+        image_fullpaths = [os.path.join(image_folder, file) for file in all_files]
+
     if not output_folder:
         output_folder = image_folder
-
     video_fullpath = os.path.join(output_folder, video_name)
 
-    images = [file for file in os.listdir(image_folder) if file.endswith(tuple(endings))]
+    # images = [file for file in os.listdir(image_folder) if file.endswith(tuple(endings))]
     # images = [file for file in os.listdir(image_folder) if file.startswith(tuple(startings))]
+    images = [file for file in image_fullpaths if os.path.splitext(file)[-1] in endings]
     images.sort()
-    print("Found images in {}:".format(image_folder))
-    for image in images:
-        print(image)
+    print("Found {} valid images".format(len(images)))
+    # for image in images:
+    #     print(image)
 
-    frame = cv2.imread(os.path.join(image_folder, images[0])) # Get image dimensions, and assume all the same
+    frame = cv2.imread(images[0]) # Get image dimensions, and assume all the same
     height, width, layers = frame.shape
     print("Image shape:", frame.shape)
 
@@ -49,14 +59,14 @@ def create_video(image_folder,
     # video = cv2.VideoWriter(video_fullpath, 0, 1, (width, height))
     # print("Video created")
 
-    # Less basic as above doesn't work: https://stackoverflow.com/questions/63925179/making-a-video-with-images-in-python-using-opencv-on-mac)
+    # Less basic b/c code above doesn't work: https://stackoverflow.com/questions/63925179/making-a-video-with-images-in-python-using-opencv-on-mac)
     fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
     video = cv2.VideoWriter(video_fullpath, fourcc, frame_rate, (width, height), isColor=True)
 
     n_images = len(images)
     for i in range(n_images):
         print("Trying to add image {} of {} to video".format(i, n_images))
-        video.write(cv2.imread(os.path.join(image_folder, images[i])))
+        video.write(cv2.imread(images[i]))
         print("Done")
 
     video.release()
