@@ -11,7 +11,7 @@ import sys,os
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.spatial.distance import euclidean
-from BirdCam import get_filename as gf
+# from birdcam.BirdCam import create_filename as cf
 
 
 THRESHOLD_DEFAULT = 40
@@ -74,7 +74,7 @@ def create_video(image_fullpaths=None,
     return video_fullpath
 
 
-def compare_images(impath, refpath, threshold = THRESHOLD_DEFAULT):
+def compare_images(impath, refpath, threshold=THRESHOLD_DEFAULT):
     image1 = cv2.imread(impath)
     arr1 = np.array(image1)
     image2 = cv2.imread(refpath)
@@ -102,7 +102,7 @@ def compare_images(impath, refpath, threshold = THRESHOLD_DEFAULT):
     return dist_h, dist_v
 
 
-if __name__ == "__main__":
-    im_folder = r"D:\_Back up to IOMEGA\_All BirdCam media\2023\images"
-    video_name = gf(stub="video_") + ".avi"
-    create_video(im_folder, frame_rate=5, video_name=video_name)
+# if __name__ == "__main__":
+#     im_folder = r"D:\_Back up to IOMEGA\_All BirdCam media\2023\images"
+#     video_name = cf(stub="video_") + ".avi"
+#     create_video(im_folder, frame_rate=5, video_name=video_name)

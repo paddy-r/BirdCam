@@ -7,6 +7,7 @@ HPR 05/03/23 Updating environment setup and adding executable
 import cv2
 import tkinter as tk
 import tkinter.filedialog as fd
+import tkinter.simpledialog as sd
 from PIL import Image, ImageTk
 # import time
 import datetime
@@ -27,9 +28,17 @@ else:
     print("\n## Running as script, path:", APP_PATH, "##\n")
 
 
-def get_filename(stub="grab_"):
-    filename = stub + str(datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
+def create_filename(stub="grab_", ext=""):
+    filename = stub + str(datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')) + ext
     return filename
+
+def extract_dates_from_filenames(fullnames,
+                                 starter="grab_",
+                                 enders=['.png']):
+    if type(fullnames) != list:
+        fullnames = [fullnames]
+    names_stripped = [os.path.splitext(name.lstrip(starter))[0] for name in fullnames if (starter in name) and (os.path.splitext(name)[1] in enders)]
+    return sorted(names_stripped)[-1]
 
 
 SAVE_FOLDER_DEFAULT = os.path.join(os.path.dirname(os.path.dirname(APP_PATH)), "media")
@@ -37,20 +46,22 @@ print(SAVE_FOLDER_DEFAULT)
 
 FILE_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "files")
 FILE_EXT_DEFAULT = '.txt'
-FILE_FILE_DEFAULT = get_filename
+FILE_FILE_DEFAULT = create_filename
 
 IMAGE_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "images")
 IMAGE_EXT_DEFAULT = '.png'
-IMAGE_FILE_DEFAULT = get_filename
+IMAGE_FILE_DEFAULT = create_filename
 GRAB_IMAGE_DEFAULT = "Grab image"
 
 VIDEO_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "videos")
 VIDEO_EXT_DEFAULT = '.avi'
-VIDEO_FILE_DEFAULT = get_filename
+VIDEO_FILE_DEFAULT = create_filename
+VIDEO_COMPILED_FILE_DEFAULT = extract_dates_from_filenames
 VIDEO_DURATION_LIMIT_DEFAULT = 25000  # Stop recording video after this time to avoid huge files
 
 FEED_INDEX_DEFAULT = 0
 FRAME_RATE_DEFAULT = 10
+FRAME_RATE_OUT_DEFAULT = 1
 
 INFO_BOX_MESSAGE_DEFAULT = ""
 INFO_DISPLAY_TIME_DEFAULT = 2000  # Display info box messages for 2 seconds
@@ -118,6 +129,7 @@ class BirdCam(tk.Tk):
 
     def __init__(self, feed_index=FEED_INDEX_DEFAULT,
                  frame_rate=FRAME_RATE_DEFAULT,
+                 frame_rate_out=FRAME_RATE_OUT_DEFAULT,
                  file_folder=FILE_FOLDER_DEFAULT,
                  file_file=FILE_FILE_DEFAULT,
                  file_ext=FILE_EXT_DEFAULT,
@@ -127,6 +139,7 @@ class BirdCam(tk.Tk):
                  image_grab_text=GRAB_IMAGE_DEFAULT,
                  video_folder=VIDEO_FOLDER_DEFAULT,
                  video_file=VIDEO_FILE_DEFAULT,
+                 video_compiled_file=VIDEO_COMPILED_FILE_DEFAULT,
                  video_ext=VIDEO_EXT_DEFAULT,
                  video_start_text=VIDEO_START_DEFAULT,
                  video_stop_text=VIDEO_STOP_DEFAULT,
@@ -150,10 +163,13 @@ class BirdCam(tk.Tk):
         self.image_grab_text = image_grab_text
         self.video_folder = video_folder
         self.video_file = video_file
+        self.video_compiled_file = video_compiled_file
         self.video_ext = video_ext
         self.video_start_text = video_start_text
         self.video_stop_text = video_stop_text
         self.video_duration_limit = video_duration_limit
+
+        self.frame_rate_out = frame_rate_out
 
         ''' Set up feed index etc. '''
         self.frame_rate = frame_rate
@@ -179,6 +195,7 @@ class BirdCam(tk.Tk):
         settingsMenu.add_command(label="File save location", command=self.OnSaveLocation)
         settingsMenu.add_command(label="Image save settings", command=self.OnImageSettings)
         settingsMenu.add_command(label="Video save settings", command=self.OnVideoSettings)
+        settingsMenu.add_command(label="Video compilation frame rate", command=self.OnSetVideoFrameRate)
 
         # Camera connect menu
         connectMenu = tk.Menu(self.menubar)
@@ -376,8 +393,26 @@ class BirdCam(tk.Tk):
         self.img.save(file)
         self.update_infobox(['Done saving image file:', file])
 
+    def ask_video_frame_rate(self, event=None):
+        self.update_infobox("Running ask_video_frame_rate")
+        new_rate = sd.askfloat(title="Set pictures per second of compiled video",
+                               prompt="Enter pictures per second in compiled video",
+                               initialvalue=self.frame_rate_out
+                               )
+        if new_rate != self.frame_rate_out:
+            self.frame_rate_out = new_rate
+            self.update_infobox("Pictures per second for compiled videos set to {}".format(self.frame_rate_out))
+        else:
+            self.update_infobox("Pictures per second not changed: {}".format(self.frame_rate_out))
+
+    def OnSetVideoFrameRate(self, event=None):
+        self.update_infobox("Running OnSetVideoFrameRate")
+        self.ask_video_frame_rate()
+
     def OnCreateVideo(self, event=None):
         self.update_infobox("Running OnCreateVideo")
+
+        # Get all images/image folder to compile
         image_paths = fd.askopenfilenames(parent=self, initialdir=APP_PATH,
                                           title='Please select one or more image files to combine into a video'
                                           )
@@ -388,13 +423,19 @@ class BirdCam(tk.Tk):
             self.update_infobox("No files selected; aborting...")
             return
 
+        # Decide on output folder
         output_folder = fd.askdirectory(parent=self, initialdir=self.video_folder,
                                         title='Please select video output folder'
                                         )
-        video_name = os.path.join(self.video_file() + "_COMPILED" + self.video_ext)
+
+        # Confirm frame rate and create/save video
+        self.ask_video_frame_rate()
+        # video_name = os.path.join(self.video_file() + "_COMPILED" + self.video_ext)
+        video_name = os.path.join(self.video_compiled_file(fullnames=image_paths_valid) + "_COMPILED" + self.video_ext)
         video_fullpath = image_utils.create_video(video_name=video_name,
                                                   image_fullpaths=image_paths_valid,
-                                                  output_folder=output_folder
+                                                  output_folder=output_folder,
+                                                  frame_rate=self.frame_rate_out
                                                   )
 
         self.update_infobox(["Saved video to:", video_fullpath])
