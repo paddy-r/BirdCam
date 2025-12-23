@@ -13,7 +13,8 @@ from PIL import Image, ImageTk
 import datetime
 import sys, os
 # import numpy as np
-from birdcam import image_utils
+# from birdcam import image_utils
+import image_utils
 
 # Grab path to file, depending on whether normal script or Pyinstaller executable
 # Taken from here: https://stackoverflow.com/questions/404744/determining-application-path-in-a-python-exe-generated-by-pyinstaller
@@ -52,6 +53,8 @@ IMAGE_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "images")
 IMAGE_EXT_DEFAULT = '.png'
 IMAGE_FILE_DEFAULT = create_filename
 GRAB_IMAGE_DEFAULT = "Grab image"
+
+IMAGE_DISPLAY_SIZE_DEFAULT = (640, 480)
 
 VIDEO_FOLDER_DEFAULT = os.path.join(SAVE_FOLDER_DEFAULT, "videos")
 VIDEO_EXT_DEFAULT = '.avi'
@@ -290,7 +293,7 @@ class BirdCam(tk.Tk):
             self.connect()
         except Exception as e:
             self.update_infobox(['Could not connect to camera', self.feed_index, ', exception follows'])
-            print(e)
+            self.update_infobox(e)
 
         # self.bind("<FocusOut>", self.on_focus_out)
         # self.bind("<FocusIn>", self.on_focus_in)
@@ -459,7 +462,15 @@ class BirdCam(tk.Tk):
             self.feed.release()
         else:
             self._connected = True
-        self.feed = cv2.VideoCapture(self.feed_index, cv2.CAP_DSHOW)
+
+        ### Options for cameras:
+        ### First is old camera via USB
+        ### Second is new camera via RTSP
+        # 1 ---
+        # self.feed = cv2.VideoCapture(self.feed_index, cv2.CAP_DSHOW)
+        # 2 ---
+        self.feed = cv2.VideoCapture("rtsp://192.168.1.222:8554/main", cv2.CAP_FFMPEG)
+
         self.update_infobox(['Got feed', self.feed_index])
         # self.timer = time.time()
         self.update_infobox("Running grab_feed from connect...")
@@ -479,7 +490,15 @@ class BirdCam(tk.Tk):
         ''' Try to automatically reconnect if problem arises '''
         if self.frame is None:
             self.feed.release()
-            self.feed = cv2.VideoCapture(self.feed_index, cv2.CAP_DSHOW)
+
+            ### Options for cameras:
+            ### First is old camera via USB
+            ### Second is new camera via RTSP
+            # 1 ---
+            # self.feed = cv2.VideoCapture(self.feed_index, cv2.CAP_DSHOW)
+            # # 2 ---
+            self.feed = cv2.VideoCapture("rtsp://192.168.1.222:8554/main", cv2.CAP_FFMPEG)
+
             self.viewer.after(2, self.grab_feed)
 
             ''' Cut video recording short, if necessary '''
@@ -489,9 +508,26 @@ class BirdCam(tk.Tk):
                 self.video_out.release()
             return
 
-        self.frame = cv2.flip(self.frame, 1)
+
+        ### Options for cameras:
+        ### First is old camera via USB
+        ### Second is new camera via RTSP
+
+        # 1 ---
+        # self.frame = cv2.flip(self.frame, 1)
         cv2image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGBA)
         self.img = Image.fromarray(cv2image)
+        self.img = self.img.resize(IMAGE_DISPLAY_SIZE_DEFAULT)
+
+        # self.img = cv2.resize(self.img, IMAGE_DISPLAY_SIZE_DEFAULT, interpolation=cv2.INTER_AREA)
+        # -----
+
+        # 2 ---
+        # cv2image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGBA)
+        # self.img = Image.fromarray(cv2image)
+        # self.img = self.img.resize(IMAGE_DISPLAY_SIZE_DEFAULT)
+        # -----
+
         imgtk = ImageTk.PhotoImage(image=self.img)
         self.viewer.imgtk = imgtk
         self.viewer.configure(image=imgtk)
@@ -533,6 +569,7 @@ class BirdCam(tk.Tk):
         except Exception:
             pass
         cv2.destroyAllWindows()
+        # cv2.waitKey(1)
         self.destroy()
 
 
