@@ -1,3 +1,5 @@
+# HR 23/12/25 For testing RTSP feed is working
+
 import cv2
 import numpy as np
 import os
@@ -5,7 +7,7 @@ os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp"
 vcap = cv2.VideoCapture("rtsp://192.168.1.222:8554/main", cv2.CAP_FFMPEG)
 while(1):
     ret, frame = vcap.read()
-    if ret == False:
+    if not ret:
         print("Frame is empty")
         break
     else:
