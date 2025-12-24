@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "BirdCam"
+version = "0.0.1"
+description = "All birds, all the time"
+readme = "README.md"
+authors = [
+    {name = "Hugh P. Rice", email = "h.p.rice@leeds.ac.uk"},
+]
+requires-python = ">=3.13.0"
+dependencies = [
+    'opencv-python',
+    'pillow',
+    'scipy',
+    'matplotlib',
+    'flask',
+]
